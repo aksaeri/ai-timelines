@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TED-AI Timeline Elicitation</title>
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --bg: #ffffff;
+    --muted: #666;
+    --faint: #aaa;
+    --border: #e0e0e0;
+    --accent: #b44;
+    --panel: #f7f5f0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 17px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 22px 18px 60px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    font-size: 15px;
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+
+  .def {
+    background: var(--panel);
+    border-left: 3px solid var(--accent);
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #444;
+    margin-bottom: 26px;
+    border-radius: 3px;
+  }
+  .def strong { color: var(--fg); }
+  .def a { color: var(--accent); text-decoration: none; }
+  .def a:hover { text-decoration: underline; }
+
+  .step {
+    margin-bottom: 30px;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-of-type { border-bottom: none; }
+  .step-num {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .step-title {
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.005em;
+  }
+  .step-desc {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+
+  .slider-row {
+    margin-bottom: 22px;
+  }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+  }
+  .slider-head .label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg);
+  }
+  .slider-head .val {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+    min-width: 70px;
+    text-align: right;
+  }
+  .untouched .val { color: var(--faint); font-weight: 500; }
+  .calibration {
+    font-size: 13px;
+    color: #777;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* Big, tappable sliders */
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 44px;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+  }
+  input[type=range]:focus { outline: none; }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #ddd;
+    border-radius: 3px;
+  }
+  input[type=range]::-moz-range-track {
+    height: 6px;
+    background: #ddd;
+    border-radius: 3px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    margin-top: -12px;
+    cursor: grab;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+  input[type=range].untouched::-webkit-slider-thumb { background: #999; }
+  input[type=range].untouched::-moz-range-thumb { background: #999; }
+
+  .shape-q { margin-bottom: 14px; }
+  .shape-q:last-child { margin-bottom: 0; }
+  .shape-q label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg);
+    margin-bottom: 6px;
+  }
+  .shape-q select {
+    font-family: inherit;
+    font-size: 15px;
+    padding: 12px 36px 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--fg);
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+
+  .chart-wrap {
+    margin-top: 14px;
+    padding: 10px 12px 6px;
+    background: var(--panel);
+    border-radius: 4px;
+  }
+  .chart-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  svg { display: block; width: 100%; height: auto; }
+
+  .d-strip {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .d-cell {
+    flex: 1;
+    padding: 10px 10px;
+    background: var(--panel);
+    border-radius: 4px;
+    text-align: center;
+  }
+  .d-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .d-val {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .submit-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 16px;
+    margin-top: 26px;
+  }
+  .submit-card label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .submit-card input[type=text] {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--fg);
+    width: 100%;
+    margin-bottom: 12px;
+    -webkit-appearance: none;
+  }
+  button.primary {
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 14px 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+  }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status { font-size: 14px; margin-top: 10px; min-height: 18px; }
+  .status.ok { color: #2a7a3a; font-weight: 600; }
+  .status.err { color: var(--accent); }
+
+  .foot {
+    font-size: 12px;
+    color: var(--faint);
+    text-align: center;
+    margin-top: 26px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .foot a { color: var(--muted); text-decoration: none; }
+  .foot a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<main>
+
+<h1>TED-AI Timelines</h1>
+<p class="sub">Build your probability distribution.</p>
+
+<div class="def">
+  <strong>TED-AI</strong>: an AI system at least as good as top human experts at virtually all cognitive tasks. Operationally, it could fully automate 95% of US remote-work jobs given the resources of a large tech company and three months to prepare.
+  (<a href="https://blog.aifutures.org/p/ai-futures-model-dec-2025-update" target="_blank" rel="noopener">AI Futures Project</a>)
+</div>
+
+<div class="step">
+  <div class="step-num">Step 1</div>
+  <div class="step-title">Your median year</div>
+  <div class="step-desc">When would you take an even-odds bet on either side?</div>
+  <div class="slider-row untouched" id="row-50">
+    <div class="slider-head"><span class="label">Median (p50)</span><span class="val" id="v50">—</span></div>
+    <input type="range" id="s50" class="untouched" min="2026" max="2070" value="2040" step="1" oninput="touchMedian(); update()">
+    <div class="calibration">50/50 — you'd take either side of the bet without feeling you'd found edge.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">Step 2</div>
+  <div class="step-title">How surprised would you be?</div>
+  <div class="step-desc">Set the width and shape of your distribution.</div>
+
+  <div class="shape-q">
+    <label>Chance TED-AI has arrived by end of 2028?</label>
+    <select id="q_early" onchange="updateShape()">
+      <option value="verylow">Essentially none (~2%)</option>
+      <option value="low">Very unlikely (~5%)</option>
+      <option value="medium" selected>Unlikely but possible (~10%)</option>
+      <option value="high">Real possibility (~20%)</option>
+      <option value="veryhigh">Quite plausible (~35%)</option>
+      <option value="maximum">Coin flip or better (~50%+)</option>
+    </select>
+  </div>
+
+  <div class="shape-q">
+    <label>Chance TED-AI still hasn't arrived by end of 2045?</label>
+    <select id="q_late" onchange="updateShape()">
+      <option value="verylow">Essentially none (~2%)</option>
+      <option value="low">Unlikely (~10%)</option>
+      <option value="medium" selected>Real possibility (~20%)</option>
+      <option value="high">Quite plausible (~35%)</option>
+      <option value="veryhigh">Coin flip (~50%)</option>
+      <option value="maximum">Likely (~70%+)</option>
+    </select>
+  </div>
+
+  <div class="shape-q">
+    <label>How wide is your uncertainty around the median?</label>
+    <select id="q_conf" onchange="updateShape()">
+      <option value="tight">Tight — 50% chance within ±2 years of median</option>
+      <option value="narrow">Narrow — 50% chance within ±4 years</option>
+      <option value="moderate" selected>Moderate — 50% chance within ±7 years</option>
+      <option value="wide">Wide — 50% chance within ±12 years</option>
+      <option value="vwide">Very wide — 50% chance within ±20 years</option>
+    </select>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">Step 3</div>
+  <div class="step-title">Fine-tune (optional)</div>
+  <div class="step-desc">Adjust any quantile that doesn't match your intuition.</div>
+
+  <div class="slider-row">
+    <div class="slider-head"><span class="label">10th percentile</span><span class="val" id="v10">—</span></div>
+    <input type="range" id="s10" min="2025" max="2060" value="2028" step="1" oninput="update()">
+    <div class="calibration">Mildly surprised if before this — a deliberate contrarian call.</div>
+  </div>
+  <div class="slider-row">
+    <div class="slider-head"><span class="label">25th percentile</span><span class="val" id="v25">—</span></div>
+    <input type="range" id="s25" min="2025" max="2065" value="2033" step="1" oninput="update()">
+    <div class="calibration">Real possibility, default is still no.</div>
+  </div>
+  <div class="slider-row">
+    <div class="slider-head"><span class="label">75th percentile</span><span class="val" id="v75">—</span></div>
+    <input type="range" id="s75" min="2028" max="2080" value="2046" step="1" oninput="update()">
+    <div class="calibration">Surprised if still hadn't arrived — the later outcome is what would need explaining.</div>
+  </div>
+  <div class="slider-row">
+    <div class="slider-head"><span class="label">90th percentile</span><span class="val" id="v90">—</span></div>
+    <input type="range" id="s90" min="2030" max="2130" value="2060" step="1" oninput="update()">
+    <div class="calibration">Genuinely surprised — reaching for stories about what went wrong.</div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-label">Your CDF</div>
+    <svg id="cdfChart" viewBox="0 0 640 220"></svg>
+  </div>
+
+  <div class="d-strip">
+    <div class="d-cell"><div class="d-label">P(by 2030)</div><div class="d-val" id="d30">—</div></div>
+    <div class="d-cell"><div class="d-label">P(by 2035)</div><div class="d-val" id="d35">—</div></div>
+    <div class="d-cell"><div class="d-label">80% width</div><div class="d-val" id="dw">—</div></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">Step 4</div>
+  <div class="step-title">Gut check</div>
+  <div class="step-desc">Without looking at your distribution: gut P(TED-AI by 2030)?</div>
+  <div class="slider-row untouched" id="row-gut">
+    <div class="slider-head"><span class="label">Gut P(by 2030)</span><span class="val" id="vgut">—</span></div>
+    <input type="range" id="sgut" class="untouched" min="0" max="100" value="50" step="1" oninput="touchGut(); update()">
+    <div class="calibration">Divergence from your distribution is informative.</div>
+  </div>
+</div>
+
+<div class="submit-card">
+  <label for="nameInput">Name or initials (optional)</label>
+  <input type="text" id="nameInput" maxlength="40" placeholder="e.g. AS" autocomplete="off">
+  <button class="primary" id="submitBtn" onclick="submitToGroup()">Submit to group</button>
+  <div class="status" id="submitStatus"></div>
+</div>
+
+<div class="foot">
+  Built by Alexander Saeri with Claude Code ·
+  <a href="mailto:alexander@aksaeri.com">alexander@aksaeri.com</a>
+</div>
+
+</main>
+
+<script src="config.js"></script>
+<script>
+if (!window.TEDAI_CONFIG) {
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div style="background:#fee;color:#a33;padding:14px 18px;font-size:14px;border-bottom:1px solid #faa">' +
+    'Missing <code>config.js</code>. Copy <code>config.example.js</code> to <code>config.js</code> and fill in Form IDs.</div>');
+  throw new Error("Missing config.js");
+}
+
+// ===== CDF CONSTRUCTION =====
+const YEAR_MIN = 2025, YEAR_MAX = 2090, STEPS = 200;
+
+function buildCDF(p10, p25, p50, p75, p90) {
+  const tailR = Math.max(p90 - p50, 15);
+  const anchors = [
+    { x: YEAR_MIN, y: 0 },
+    { x: p10, y: 0.10 },
+    { x: p25, y: 0.25 },
+    { x: p50, y: 0.50 },
+    { x: p75, y: 0.75 },
+    { x: p90, y: 0.90 },
+    { x: p90 + tailR, y: 0.94 },
+    { x: p90 + tailR*3, y: 0.98 },
+    { x: p90 + tailR*6, y: 1.0 },
+  ];
+  function evalLinear(x) {
+    if (x <= anchors[0].x) return 0;
+    if (x >= anchors[anchors.length-1].x) return 1;
+    for (let i = 0; i < anchors.length-1; i++) {
+      if (x >= anchors[i].x && x < anchors[i+1].x) {
+        const t = (x - anchors[i].x) / (anchors[i+1].x - anchors[i].x);
+        return anchors[i].y + t * (anchors[i+1].y - anchors[i].y);
+      }
+    }
+    return 1;
+  }
+  const result = [];
+  for (let i = 0; i <= STEPS; i++) {
+    const x = YEAR_MIN + (YEAR_MAX - YEAR_MIN) * (i / STEPS);
+    result.push({ x, cdf: evalLinear(x) });
+  }
+  return result;
+}
+
+// ===== REFERENCE FORECASTERS =====
+const REFS = [
+  { name: "Kokotajlo", p10: 2027, p25: 2028.5, p50: 2031, p75: 2035, p90: 2050, color: "#cc4488" },
+  { name: "Metaculus", p10: 2027, p25: 2028,   p50: 2030, p75: 2035, p90: 2055, color: "#2266cc" },
+];
+
+// ===== CHART GEOMETRY =====
+const W = 640, H = 220;
+const PAD = { top: 14, right: 14, bottom: 24, left: 38 };
+const cw = W - PAD.left - PAD.right;
+const ch = H - PAD.top - PAD.bottom;
+function toX(v) { return PAD.left + ((v - YEAR_MIN) / (YEAR_MAX - YEAR_MIN)) * cw; }
+function toYc(v) { return PAD.top + ch - v * ch; }
+
+// ===== STATE =====
+const touched = { med: false, gut: false };
+
+function el(id) { return document.getElementById(id); }
+
+function touchMedian() {
+  if (touched.med) { update(); return; }
+  touched.med = true;
+  el('row-50').classList.remove('untouched');
+  el('s50').classList.remove('untouched');
+  // When first touched, apply the current shape-question mapping
+  applyShape();
+}
+function touchGut() {
+  if (touched.gut) return;
+  touched.gut = true;
+  el('row-gut').classList.remove('untouched');
+  el('sgut').classList.remove('untouched');
+}
+
+function updateShape() {
+  if (touched.med) applyShape();
+  update();
+}
+
+function applyShape() {
+  const med = +el('s50').value;
+
+  // P(TED-AI by end of 2028) as fraction
+  const earlyPct = { verylow: 0.02, low: 0.05, medium: 0.10, high: 0.20, veryhigh: 0.35, maximum: 0.55 }[el('q_early').value];
+  // P(TED-AI still not arrived by end of 2045) as fraction; P(by 2045) = 1 - this
+  const latePct  = { verylow: 0.02, low: 0.10, medium: 0.20, high: 0.35, veryhigh: 0.50, maximum: 0.70 }[el('q_late').value];
+  // IQR half-width in years
+  const halfW    = { tight: 2, narrow: 4, moderate: 7, wide: 12, vwide: 20 }[el('q_conf').value];
+
+  // --- p10: year where CDF = 10%, from (2025, 0), (2028, earlyPct), (med, 0.50) ---
+  let p10;
+  if (earlyPct >= 0.10) {
+    // p10 sits before 2028, interpolating (2025, 0) to (2028, earlyPct)
+    const t = 0.10 / earlyPct;
+    p10 = 2025 + t * (2028 - 2025);
+  } else {
+    // p10 sits between 2028 and med
+    const t = (0.10 - earlyPct) / (0.50 - earlyPct);
+    p10 = 2028 + t * (med - 2028);
+  }
+  p10 = Math.round(Math.max(2025, Math.min(p10, med - 1)));
+
+  // --- p90: year where CDF = 90%, from (med, 0.50), (2045, 1 - latePct), far anchor ---
+  const cdfAt2045 = 1 - latePct;
+  let p90;
+  if (cdfAt2045 >= 0.90) {
+    // p90 between med and 2045
+    const t = (0.90 - 0.50) / (cdfAt2045 - 0.50);
+    p90 = med + t * (2045 - med);
+  } else if (cdfAt2045 > 0.50) {
+    // p90 after 2045, interpolate to far anchor (2100, 0.99)
+    const t = (0.90 - cdfAt2045) / (0.99 - cdfAt2045);
+    p90 = 2045 + t * (2100 - 2045);
+  } else {
+    // User thinks median is near or after 2045 — fall back on spread
+    p90 = med + halfW * 3;
+  }
+  p90 = Math.round(Math.max(med + 2, p90));
+
+  // --- p25 / p75 from IQR half-width ---
+  const p25 = Math.max(p10 + 1, Math.round(med - halfW));
+  const p75 = Math.min(p90 - 1, Math.round(med + halfW));
+
+  el('s10').value = p10;
+  el('s25').value = p25;
+  el('s75').value = p75;
+  el('s90').value = p90;
+}
+
+function update() {
+  // Enforce ordering
+  const p10i = +el('s10').value, p25i = +el('s25').value, p50i = +el('s50').value;
+  const p75i = +el('s75').value, p90i = +el('s90').value;
+  if (p10i >= p25i) el('s10').value = p25i - 1;
+  if (p25i >= p50i) el('s25').value = p50i - 1;
+  if (p75i <= p50i) el('s75').value = p50i + 1;
+  if (p90i <= p75i) el('s90').value = p75i + 1;
+
+  const q10 = +el('s10').value, q25 = +el('s25').value, q50 = +el('s50').value;
+  const q75 = +el('s75').value, q90 = +el('s90').value;
+
+  if (touched.med) {
+    el('v10').textContent = q10;
+    el('v25').textContent = q25;
+    el('v50').textContent = q50;
+    el('v75').textContent = q75;
+    el('v90').textContent = q90;
+
+    const user = buildCDF(q10, q25, q50, q75, q90);
+    drawCDF(user, q10, q25, q50, q75, q90);
+    const cdf = yr => { const p = user.find(p => p.x >= yr); return p ? Math.round(p.cdf * 100) : 100; };
+    el('d30').textContent = cdf(2030) + '%';
+    el('d35').textContent = cdf(2035) + '%';
+    el('dw').textContent = (q90 - q10) + 'y';
+  } else {
+    ['v10','v25','v50','v75','v90'].forEach(id => el(id).textContent = '—');
+    el('cdfChart').innerHTML = '';
+    el('d30').textContent = '—';
+    el('d35').textContent = '—';
+    el('dw').textContent = '—';
+  }
+
+  const gut = +el('sgut').value;
+  el('vgut').textContent = touched.gut ? (gut + '%') : '—';
+}
+
+function drawCDF(user, q10, q25, q50, q75, q90) {
+  const svg = el('cdfChart');
+  let out = '';
+  out += `<rect x="${PAD.left}" y="${PAD.top}" width="${cw}" height="${ch}" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>`;
+  for (const p of [0, 0.25, 0.5, 0.75, 1]) {
+    const y = toYc(p);
+    out += `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cw}" y2="${y}" stroke="#eee" stroke-width="1"/>`;
+    out += `<text x="${PAD.left-6}" y="${y+4}" font-size="11" fill="#999" text-anchor="end">${Math.round(p*100)}%</text>`;
+  }
+  for (const yr of [2030, 2040, 2050, 2060, 2070, 2080]) {
+    const x = toX(yr);
+    out += `<text x="${x}" y="${PAD.top+ch+14}" font-size="11" fill="#999" text-anchor="middle">${yr}</text>`;
+  }
+  const x30 = toX(2030);
+  out += `<line x1="${x30}" y1="${PAD.top}" x2="${x30}" y2="${PAD.top+ch}" stroke="#b44" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>`;
+
+  for (const r of REFS) {
+    const pts = buildCDF(r.p10, r.p25, r.p50, r.p75, r.p90);
+    let d = '';
+    for (let i = 0; i < pts.length; i++) {
+      d += (i === 0 ? 'M' : 'L') + toX(pts[i].x).toFixed(1) + ',' + toYc(pts[i].cdf).toFixed(1) + ' ';
+    }
+    out += `<path d="${d}" stroke="${r.color}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="4,3"/>`;
+  }
+
+  let d = '';
+  for (let i = 0; i < user.length; i++) {
+    d += (i === 0 ? 'M' : 'L') + toX(user[i].x).toFixed(1) + ',' + toYc(user[i].cdf).toFixed(1) + ' ';
+  }
+  out += `<path d="${d}" stroke="#1a1a1a" stroke-width="2.5" fill="none"/>`;
+
+  const quants = [[q10, 0.10], [q25, 0.25], [q50, 0.50], [q75, 0.75], [q90, 0.90]];
+  for (const [yr, q] of quants) {
+    const r = q === 0.5 ? 5.5 : 4;
+    out += `<circle cx="${toX(yr)}" cy="${toYc(q)}" r="${r}" fill="#b44" stroke="#fff" stroke-width="1.5"/>`;
+  }
+
+  svg.innerHTML = out;
+}
+
+// ===== SUBMIT =====
+const FORM_URL = window.TEDAI_CONFIG.FORM_URL;
+const FORM_ENTRIES = window.TEDAI_CONFIG.FORM_ENTRIES;
+
+async function submitToGroup() {
+  const btn = el('submitBtn');
+  const status = el('submitStatus');
+  const name = (el('nameInput').value || "").trim();
+  const p10 = +el('s10').value, p25 = +el('s25').value, p50 = +el('s50').value;
+  const p75 = +el('s75').value, p90 = +el('s90').value;
+  const gut = +el('sgut').value;
+
+  if (!touched.med) {
+    status.className = 'status err';
+    status.textContent = 'Set your median first (Step 1).';
+    return;
+  }
+  if (!(p10 < p25 && p25 < p50 && p50 < p75 && p75 < p90)) {
+    status.className = 'status err';
+    status.textContent = 'Ordering error: adjust sliders so p10 < p25 < p50 < p75 < p90.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+  status.className = 'status';
+  status.textContent = 'Sending…';
+
+  const body = new URLSearchParams();
+  body.append(FORM_ENTRIES.name, name);
+  body.append(FORM_ENTRIES.p10, p10);
+  body.append(FORM_ENTRIES.p25, p25);
+  body.append(FORM_ENTRIES.p50, p50);
+  body.append(FORM_ENTRIES.p75, p75);
+  body.append(FORM_ENTRIES.p90, p90);
+  body.append(FORM_ENTRIES.gut, touched.gut ? gut : '');
+
+  try {
+    await fetch(FORM_URL, { method: "POST", mode: "no-cors", body });
+    status.className = 'status ok';
+    status.textContent = '✓ Submitted. Resubmit if you change your mind.';
+    btn.textContent = 'Resubmit';
+  } catch (e) {
+    status.className = 'status err';
+    status.textContent = 'Submit failed: ' + e.message;
+    btn.textContent = 'Submit to group';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+update();
+</script>
+</body>
+</html>

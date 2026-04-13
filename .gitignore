@@ -1,0 +1,16 @@
+# Local runtime config (Form + Sheet IDs). Copy site/config.example.js → site/config.js.
+site/config.js
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env (none used by this project, kept as a safety net)
+.env
+.env.local
