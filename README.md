@@ -13,10 +13,10 @@ Built for a TED-AI workshop but reusable for any small-group timeline elicitatio
 │   └── screen/index.html        # Shared-screen group visualisation
 ├── docs/
 │   ├── facilitation-script.md   # 15-minute run sheet for the facilitator
-│   ├── slide-deck-briefing.md   # Briefing used to generate the slide deck
+│   ├── slides.pptx              # 3-slide framing deck (framing + QR codes)
+│   ├── slide-deck-briefing.md   # Briefing used to generate slides.pptx
 │   ├── form-descriptions.md     # Paste-in text for the Google Form fields
 │   └── source-conversation.md   # Original Claude conversation that seeded the project
-├── tedai_elicitation_slides.pptx  # 3-slide deck (framing + QR codes)
 └── README.md
 ```
 
