@@ -283,7 +283,7 @@
 <main>
 
 <h1>TED-AI Timelines</h1>
-<p class="sub">Build your probability distribution.</p>
+<p class="sub">Estimate when TED-AI will arrive, as a range of years.</p>
 
 <div class="def">
   <strong>TED-AI</strong>: an AI system at least as good as top human experts at virtually all cognitive tasks. Operationally, it could fully automate 95% of US remote-work jobs given the resources of a large tech company and three months to prepare.
@@ -293,18 +293,18 @@
 <div class="step">
   <div class="step-num">Step 1</div>
   <div class="step-title">Your median year</div>
-  <div class="step-desc">When would you take an even-odds bet on either side?</div>
+  <div class="step-desc">Start with the middle of your estimate.</div>
   <div class="slider-row untouched" id="row-50">
     <div class="slider-head"><span class="label">Median (p50)</span><span class="val" id="v50">—</span></div>
     <input type="range" id="s50" class="untouched" min="2026" max="2070" value="2040" step="1" oninput="touchMedian(); update()">
-    <div class="calibration">50/50 — you'd take either side of the bet without feeling you'd found edge.</div>
+    <div class="calibration">50% chance TED-AI arrives before this year.</div>
   </div>
 </div>
 
 <div class="step">
   <div class="step-num">Step 2</div>
   <div class="step-title">How surprised would you be?</div>
-  <div class="step-desc">Set the width and shape of your distribution.</div>
+  <div class="step-desc">These set how spread out your estimate is. You can adjust the result in step 3.</div>
 
   <div class="shape-q">
     <label>Chance TED-AI has arrived by end of 2028?</label>
@@ -345,27 +345,27 @@
 <div class="step">
   <div class="step-num">Step 3</div>
   <div class="step-title">Fine-tune (optional)</div>
-  <div class="step-desc">Adjust any quantile that doesn't match your intuition.</div>
+  <div class="step-desc">Step 2 filled these in. Move any that look wrong.</div>
 
   <div class="slider-row">
     <div class="slider-head"><span class="label">10th percentile</span><span class="val" id="v10">—</span></div>
     <input type="range" id="s10" min="2025" max="2060" value="2028" step="1" oninput="update()">
-    <div class="calibration">Mildly surprised if before this — a deliberate contrarian call.</div>
+    <div class="calibration">10% chance TED-AI arrives before this year.</div>
   </div>
   <div class="slider-row">
     <div class="slider-head"><span class="label">25th percentile</span><span class="val" id="v25">—</span></div>
     <input type="range" id="s25" min="2025" max="2065" value="2033" step="1" oninput="update()">
-    <div class="calibration">Real possibility, default is still no.</div>
+    <div class="calibration">25% chance TED-AI arrives before this year.</div>
   </div>
   <div class="slider-row">
     <div class="slider-head"><span class="label">75th percentile</span><span class="val" id="v75">—</span></div>
     <input type="range" id="s75" min="2028" max="2080" value="2046" step="1" oninput="update()">
-    <div class="calibration">Surprised if still hadn't arrived — the later outcome is what would need explaining.</div>
+    <div class="calibration">75% chance TED-AI arrives before this year.</div>
   </div>
   <div class="slider-row">
     <div class="slider-head"><span class="label">90th percentile</span><span class="val" id="v90">—</span></div>
     <input type="range" id="s90" min="2030" max="2130" value="2060" step="1" oninput="update()">
-    <div class="calibration">Genuinely surprised — reaching for stories about what went wrong.</div>
+    <div class="calibration">90% chance TED-AI arrives before this year.</div>
   </div>
 
   <div class="chart-wrap">
@@ -383,11 +383,11 @@
 <div class="step">
   <div class="step-num">Step 4</div>
   <div class="step-title">Gut check</div>
-  <div class="step-desc">Without looking at your distribution: gut P(TED-AI by 2030)?</div>
+  <div class="step-desc">Without checking your numbers above, what's your gut sense of the chance TED-AI arrives by the end of 2030?</div>
   <div class="slider-row untouched" id="row-gut">
     <div class="slider-head"><span class="label">Gut P(by 2030)</span><span class="val" id="vgut">—</span></div>
     <input type="range" id="sgut" class="untouched" min="0" max="100" value="50" step="1" oninput="touchGut(); update()">
-    <div class="calibration">Divergence from your distribution is informative.</div>
+    <div class="calibration">Optional. Answer first, then compare it with P(by 2030) under the chart in step 3.</div>
   </div>
 </div>
 
@@ -635,7 +635,7 @@ async function submitToGroup() {
   }
   if (!(p10 < p25 && p25 < p50 && p50 < p75 && p75 < p90)) {
     status.className = 'status err';
-    status.textContent = 'Ordering error: adjust sliders so p10 < p25 < p50 < p75 < p90.';
+    status.textContent = 'Each percentile needs a later year than the one before it. Adjust the sliders in step 3.';
     return;
   }
 
@@ -656,13 +656,12 @@ async function submitToGroup() {
   try {
     await fetch(FORM_URL, { method: "POST", mode: "no-cors", body });
     status.className = 'status ok';
-    status.textContent = '✓ Submitted. Resubmit if you change your mind.';
-    btn.textContent = 'Resubmit';
+    status.textContent = '✓ Submitted.';
+    btn.textContent = 'Submitted';
   } catch (e) {
     status.className = 'status err';
     status.textContent = 'Submit failed: ' + e.message;
     btn.textContent = 'Submit to group';
-  } finally {
     btn.disabled = false;
   }
 }

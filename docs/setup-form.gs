@@ -21,8 +21,8 @@ function setupTedAiForm() {
     'a large tech company and three months to prepare, it could fully ' +
     'automate 95% of remote-work jobs in the US. ' +
     'Definition from the AI Futures Project.\n\n' +
-    'Enter five quantile years (e.g. 2032). Ordering must hold: ' +
-    'p10 < p25 < p50 < p75 < p90.'
+    'Enter each answer as a year, for example 2035. Each year must be ' +
+    'later than the one before.'
   );
   form.setCollectEmail(false);
   form.setShowLinkToRespondAgain(false);
@@ -30,25 +30,20 @@ function setupTedAiForm() {
 
   const fields = [
     { key: 'name', title: 'Name or initials',
-      desc: 'Optional. Used to label your curve on the shared screen.',
+      desc: 'Optional. Labels your curve on the shared screen.',
       required: false },
     { key: 'p10', title: 'p10 — 10% chance before this year',
-      desc: 'Mildly surprised if TED-AI arrived before this year — a deliberate contrarian call.',
       required: true },
     { key: 'p25', title: 'p25 — 25% chance before this year',
-      desc: 'Real possibility, default is still no.',
       required: true },
     { key: 'p50', title: 'p50 — Median (50% chance by this year)',
-      desc: 'A coin flip — you would take either side of an even-odds bet.',
       required: true },
     { key: 'p75', title: 'p75 — 75% chance before this year',
-      desc: 'Somewhat surprised if TED-AI still has not arrived — the later outcome is what would need explaining.',
       required: true },
     { key: 'p90', title: 'p90 — 90% chance before this year',
-      desc: 'Genuinely surprised — reaching for stories about what went wrong.',
       required: true },
     { key: 'gut', title: 'Gut P(TED-AI by 2030), %',
-      desc: 'Without looking at your distribution: gut probability (0-100) that TED-AI arrives before end of 2030.',
+      desc: 'Optional. Your gut sense of the chance (0-100) that TED-AI arrives by the end of 2030, before looking at your other answers.',
       required: false },
   ];
 
@@ -56,8 +51,8 @@ function setupTedAiForm() {
   for (const f of fields) {
     const item = form.addTextItem()
       .setTitle(f.title)
-      .setHelpText(f.desc)
       .setRequired(f.required);
+    if (f.desc) item.setHelpText(f.desc);
     entries[f.key] = 'entry.' + item.getId();
   }
 
