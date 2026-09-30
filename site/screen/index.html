@@ -262,6 +262,26 @@
   svg .person { transition: opacity 0.12s; }
   svg .person .hit { cursor: pointer; }
   svg.has-hover .person:not(.active) { opacity: 0.18; }
+
+  /* QR overlay: shown on load, toggled with the footer button or the Q key */
+  #qr {
+    position: fixed; inset: 0; z-index: 900;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, 0.94);
+    cursor: pointer;
+  }
+  #qr.on { display: flex; }
+  .qr-card {
+    display: flex; align-items: center; gap: 60px;
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 40px 60px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  }
+  .qr-card img { width: min(64vh, 660px); height: min(64vh, 660px); display: block; }
+  .qr-text h2 { font-size: 54px; margin: 0 0 18px; letter-spacing: -0.01em; }
+  .qr-text .url { font-size: 30px; font-weight: 600; color: var(--accent); }
+  .qr-text .qr-count { font-size: 30px; margin-top: 36px; color: var(--fg); }
+  .qr-text .qr-count .n { font-size: 44px; font-weight: 700; }
+  .qr-text .hint { font-size: 18px; color: var(--faint); margin-top: 14px; }
 </style>
 </head>
 <body>
@@ -317,11 +337,24 @@
     <label><input type="checkbox" id="showAvg" checked> Group average</label>
     <button onclick="downloadCSV()" class="export-btn">Download CSV</button>
     <button onclick="downloadPNG()" class="export-btn">Download PNG</button>
+    <button onclick="toggleQR()" class="export-btn">QR code (Q)</button>
   </div>
-  <div>last refresh <span id="stamp">–</span></div>
+  <div><span id="sinceNote"></span>last refresh <span id="stamp">–</span></div>
 </div>
 
 </main>
+
+<div id="qr" class="on" onclick="toggleQR(false)">
+  <div class="qr-card">
+    <img src="../qr.svg" alt="QR code for the forecast page">
+    <div class="qr-text">
+      <h2>Scan to add<br>your forecast</h2>
+      <div class="url" id="qrUrl"></div>
+      <div class="qr-count"><span class="n" id="qrCount">0</span> <span id="qrCountWord">forecasts</span> in</div>
+      <div class="hint">Click or press Q to show the chart</div>
+    </div>
+  </div>
+</div>
 
 <div class="credit">
   <div>
@@ -334,7 +367,8 @@
   </div>
 </div>
 
-<script src="../config.js"></script>
+<!-- config.js is fetched with a timestamp so CDN/browser caches never serve a stale config -->
+<script>document.write('<script src="../config.js?_=' + Date.now() + '"><\/script>');</script>
 <script>
 // ===== CONFIG =====
 if (!window.TEDAI_CONFIG) {
@@ -348,6 +382,19 @@ const GID = window.TEDAI_CONFIG.GID;
 const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
 const REFRESH_MS = 5000;
 const LS_PREFIX = "tedai-hidden:";
+const PUBLIC_URL = window.TEDAI_CONFIG.PUBLIC_URL || new URL("../", location.href).href;
+const SHOW_SINCE = window.TEDAI_CONFIG.SHOW_SINCE || "";
+
+// Sheet timestamps are sheet-local, day-first ("28/09/2026 14:05:12").
+// Returns a sortable YYYYMMDDHHMMSS number, or null if unparseable.
+function sheetTimeKey(s) {
+  let m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/.exec(s);
+  if (m) return +(m[3] + m[2].padStart(2,"0") + m[1].padStart(2,"0") + m[4].padStart(2,"0") + m[5] + m[6]);
+  m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(s);
+  if (m) return +(m[1] + m[2] + m[3] + m[4] + m[5] + m[6]);
+  return null;
+}
+const SINCE_KEY = SHOW_SINCE ? sheetTimeKey(SHOW_SINCE) : null;
 
 const PERSON_COLORS = ["#d9376e","#1e6fd9","#2d9a4a","#e28514","#7f3fbf","#0a8a8a","#cc3333","#888888"];
 
@@ -466,6 +513,12 @@ async function fetchSubmissions() {
     if ([p10,p25,p50,p75,p90].some(v => !isFinite(v))) continue;
     if (!(p10 < p25 && p25 < p50 && p50 < p75 && p75 < p90)) continue;
     if (showFlag === "hide") continue;
+    // Session cutoff (config SHOW_SINCE): older rows stay in the Sheet but aren't shown.
+    // An unparseable timestamp is shown rather than silently dropped.
+    if (SINCE_KEY !== null) {
+      const k = sheetTimeKey(timestamp);
+      if (k !== null && k < SINCE_KEY) continue;
+    }
     const id = `${timestamp}|${name}`;
     subs.push({ id, timestamp, name, p10, p25, p50, p75, p90, gut });
   }
@@ -726,6 +779,8 @@ function render(allSubs) {
   }
 
   document.getElementById('count').textContent = visible.length + (allSubs.length > visible.length ? ` / ${allSubs.length}` : "");
+  document.getElementById('qrCount').textContent = visible.length;
+  document.getElementById('qrCountWord').textContent = visible.length === 1 ? 'forecast' : 'forecasts';
   document.getElementById('stamp').textContent = new Date().toLocaleTimeString();
 }
 
@@ -898,6 +953,19 @@ async function tick() {
 
 document.getElementById('showRefs').addEventListener('change', () => render(lastSubs));
 document.getElementById('showAvg').addEventListener('change', () => render(lastSubs));
+
+// ===== QR OVERLAY =====
+function toggleQR(on) {
+  const el = document.getElementById('qr');
+  el.classList.toggle('on', on === undefined ? !el.classList.contains('on') : on);
+}
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'q' || e.key === 'Q') && !e.metaKey && !e.ctrlKey && !e.altKey) toggleQR();
+});
+document.getElementById('qrUrl').textContent = PUBLIC_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
+if (SINCE_KEY !== null) {
+  document.getElementById('sinceNote').textContent = `showing responses since ${SHOW_SINCE} · `;
+}
 
 tick();
 setInterval(tick, REFRESH_MS);

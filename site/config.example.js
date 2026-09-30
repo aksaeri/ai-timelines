@@ -22,4 +22,14 @@ window.TEDAI_CONFIG = {
   // so the screen page can fetch the public CSV export.
   SHEET_ID: "REPLACE_SHEET_ID",
   GID: "0",
+
+  // Public URL of the phone page. Shown under the QR code on the projector.
+  // The QR image itself is site/qr.svg: regenerate it when this changes, e.g.
+  //   uv run --with segno python -c "import segno; segno.make('URL').save('site/qr.svg', scale=10, border=2)"
+  PUBLIC_URL: "https://example.com/tedai-elicit/",
+
+  // Session cutoff. The projector shows only responses at or after this time
+  // (Sheet-local, "YYYY-MM-DD HH:MM:SS"). Older rows stay in the Sheet untouched.
+  // Set it to the start of each new session; leave empty to show everything.
+  SHOW_SINCE: "",
 };

@@ -1,5 +1,6 @@
 # Local runtime config (Form + Sheet IDs). Copy site/config.example.js → site/config.js.
 site/config.js
+site/qr.svg
 
 # OS
 .DS_Store

@@ -405,7 +405,8 @@
 
 </main>
 
-<script src="config.js"></script>
+<!-- config.js is fetched with a timestamp so CDN/browser caches never serve a stale config -->
+<script>document.write('<script src="config.js?_=' + Date.now() + '"><\/script>');</script>
 <script>
 if (!window.TEDAI_CONFIG) {
   document.body.insertAdjacentHTML('afterbegin',
